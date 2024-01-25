@@ -7,6 +7,7 @@
 """
 import numpy as np
 import pandas as pd
+from openai import OpenAI
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.preprocessing import OneHotEncoder
 
@@ -62,21 +63,21 @@ with open("./files/wh.json", "r") as file:
 
     # TODO: Represent the text of tweets using One-hot encoding
     for tweet in df["text"]:
+        print(tweet)
         unique_words = set()
         temp_list = tweet.split(" ")
         unique_words = unique_words.union(set(temp_list))
         np_temp_list= np.reshape(list(temp_list), (-1, 1))
         enc = OneHotEncoder(categories=[list(unique_words)])
         one_hot_enc = enc.fit(np_temp_list)
-        print(tweet)
         print(one_hot_enc.transform(np_temp_list).toarray())
 
     # TODO: Represent the text of tweets using Bag of Words (BOW)
     for tweet in df["text"]:
+        print(tweet)
         temp_list = tweet.split(" ")
         vectorizer = CountVectorizer(stop_words=None)
         vectorizer.fit(temp_list)
-        print(tweet)
         print(vectorizer.vocabulary_)
         vector = vectorizer.transform(temp_list)
         print(vector.shape)
@@ -92,3 +93,25 @@ with open("./files/wh.json", "r") as file:
         print(trans_tweet.toarray())
         idf = tf.idf_
         print(dict(zip(fit_tweet.get_feature_names_out(), idf)))
+
+    # TODO: Represent the text of tweets using bigrams
+    for tweet in df["text"]:
+        print(tweet)
+        temp_list = list()
+        temp_list.append(tweet)
+        bigram_vectorizer = CountVectorizer(analyzer="word", ngram_range=(2,2))
+        fit_bigram = bigram_vectorizer.fit_transform(temp_list)
+        print(bigram_vectorizer.get_feature_names_out())
+        print(fit_bigram.toarray())
+
+# TODO: Show the semantic relations (similarity/dissimilarity) between a couple of words/phrases/sentences
+my_api_key = "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"
+client = OpenAI(api_key=my_api_key)
+def open_ai_embedding(text):
+    embedding= client.embeddings.create(input = [text], model="text-embedding-ada-002").data[0].embedding
+    return np.array(embedding)
+
+# embedding=open_ai_embedding("hello")
+# embedding=open_ai_embedding("hello, my name is bob. Your name is jane")
+embedding=open_ai_embedding("bye")
+print(embedding)
