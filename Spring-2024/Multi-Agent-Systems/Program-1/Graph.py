@@ -21,8 +21,7 @@ class Graph:
     def combine_edges(self, edges):
         new_edges = []
         i = 0
-
-        while i < len(edges):
+        while i < len(edges) - 1:
             e = self.combine(edges[i], edges[i + 1])
             if e is not None:
                 new_edges.append(e)
@@ -114,7 +113,8 @@ class Graph:
         self.print2d_array("adjacency", self.adjM)
         self.print2d_array("residual", self.residual)
         self.print2d_array("cost", self.cost_array)
-        self.BellmanFord(0, len(self.vertices) - 1)
+        # self.BellmanFord(0, len(self.vertices) - 1)
+        self.ford_fulkerson(0, len(self.vertices) - 1)
 
     # utility function used to print the matrix dist with label
     def print_array(self, label, dist):
@@ -146,9 +146,53 @@ class Graph:
                         dist[v] = dist[u] + self.cost_array[u][v]
                         pred[v] = u
 
-        self.print_array("Predecessor", pred)
-        self.print_array("Cost", dist)
+        # self.print_array("Predecessor", pred)
+        self.pred = pred
+        # self.print_array("Cost", dist)
         return pred[sink] >= 0
+
+    def ford_fulkerson(self, src: int, sink: int):
+        total_flow = 0
+        prev = 0
+        while(self.BellmanFord(src, sink)):
+            # compute bottleneck capacity starting at terminal node
+            avail_flow = 9999
+            v1 = sink
+            while v1 != src:
+                prev = self.pred[v1]
+                avail_flow = min(avail_flow, self.residual[prev][v1])
+                v1 = prev
+
+
+            # augment flow edges from residual[prev][v]
+            v2 = sink
+            while v2 != src:
+                prev = self.pred[v2]
+                self.residual[prev][v2] -= avail_flow
+                self.residual[v2][prev] += avail_flow
+                v2 = prev
+            total_flow += avail_flow
+        print("total flow = " + str(total_flow))
+        self.print2d_array("residual after ford fulkerson", self.residual)
+        self.calculate_total_cost()
+        return
+
+    def calculate_total_cost(self):
+        total_cost = 0
+
+        i = 0
+        for row in self.residual:
+            if 1 in row:
+                j = 0
+                for col in row:
+                    if col != 0:
+                        total_cost += self.cost_array[i][j]
+                        # if "Source" != self.vertices[i] and "Source" != self.vertices[j]:
+                        print(f"({ self.vertices[i] }, { self.vertices[j] }, { self.cost_array[i][j] })")
+                    j += 1
+            i += 1
+        print("Total Cost = " + str(total_cost))
+        return
 
     # create an adjacency matrix from men preferencese and women preferences
     def __init__(self, fileTuple):
@@ -156,13 +200,15 @@ class Graph:
         self.adjM = []
         self.vertex_ct = 0
         self.edges = []
+        self.residual_original = []
         self.residual = []
         self.cost_array = []
         self.create_graph(fileTuple)
+        self.pred = []
 
 ##files = [("men0.txt", "women0.txt", True), ("men.txt", "women.txt", True), ("men2.txt", "women2.txt", True),
 ##         ("men3.txt", "women3.txt", False), ("men4.txt", "women4.txt", False)]
-files = [("men3.txt", "women3.txt", True)]
+files = [("./files/Applicants1.txt", "./files/Employers1.txt", True)]
 for fileTuple in files:
     g=Graph(fileTuple)
     g.do_flow()
