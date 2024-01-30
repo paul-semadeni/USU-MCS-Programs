@@ -158,11 +158,21 @@ class Graph:
             # compute bottleneck capacity starting at terminal node
             avail_flow = 9999
             v1 = sink
+            path_list = list()
+            cost_list = list()
             while v1 != src:
+                # Keep track of path
+                path_list.append(self.vertices[v1])
                 prev = self.pred[v1]
                 avail_flow = min(avail_flow, self.residual[prev][v1])
+                # Keep track of the cost
+                cost_list.append(self.cost_array[prev][v1])
                 v1 = prev
-
+            path_list.append(self.vertices[0])
+            print(f"Path: {' -> '.join(reversed(path_list))}")
+            total_cost = sum(cost_list)
+            cost_list = ["(" + str(cost) + ")" for cost in cost_list]
+            print(f"Cost: {' + '.join(cost_list)} = {str(total_cost)}")
 
             # augment flow edges from residual[prev][v]
             v2 = sink
@@ -173,25 +183,6 @@ class Graph:
                 v2 = prev
             total_flow += avail_flow
         print("total flow = " + str(total_flow))
-        self.print2d_array("residual after ford fulkerson", self.residual)
-        self.calculate_total_cost()
-        return
-
-    def calculate_total_cost(self):
-        total_cost = 0
-
-        i = 0
-        for row in self.residual:
-            if 1 in row:
-                j = 0
-                for col in row:
-                    if col != 0:
-                        total_cost += self.cost_array[i][j]
-                        # if "Source" != self.vertices[i] and "Source" != self.vertices[j]:
-                        print(f"({ self.vertices[i] }, { self.vertices[j] }, { self.cost_array[i][j] })")
-                    j += 1
-            i += 1
-        print("Total Cost = " + str(total_cost))
         return
 
     # create an adjacency matrix from men preferencese and women preferences
@@ -200,7 +191,7 @@ class Graph:
         self.adjM = []
         self.vertex_ct = 0
         self.edges = []
-        self.residual_original = []
+        self.matchings = []
         self.residual = []
         self.cost_array = []
         self.create_graph(fileTuple)
@@ -208,7 +199,10 @@ class Graph:
 
 ##files = [("men0.txt", "women0.txt", True), ("men.txt", "women.txt", True), ("men2.txt", "women2.txt", True),
 ##         ("men3.txt", "women3.txt", False), ("men4.txt", "women4.txt", False)]
-files = [("./files/Applicants1.txt", "./files/Employers1.txt", True)]
+# files = [("./files/Wards.txt", "./files/Months.txt", True)]
+# files = [("./files/DinnerIdeas.txt", "./files/DaysOfWeek.txt", True)]
+files = [("./files/Employers1.txt", "./files/Applicants1.txt", True)]
+# files = [("./files/Applicants1.txt", "./files/Employers1.txt", True)]
 for fileTuple in files:
     g=Graph(fileTuple)
     g.do_flow()
