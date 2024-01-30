@@ -196,12 +196,16 @@ def sum_preferences(group, name):
     arr = list()
 
     for i in group:
-        sum += group[i].rank
+        if group[i].rank:
+            sum += group[i].rank
         arr.append(str(group[i].rank))
 
     return f"{ name } achieved ({ '+'.join(arr) }={ str(sum) })"
 
 
-files = [("text-files/Employers.txt", "text-files/Applicants.txt", True)]
+# files = [("text-files/Wards.txt", "text-files/Months.txt", True)]
+# files = [("text-files/DinnerIdeas.txt", "text-files/DaysOfWeek.txt", True)]
+# files = [("text-files/Applicants1.txt", "text-files/Employers1.txt", True)]
+files = [("text-files/Employers1.txt", "text-files/Applicants1.txt", True)]
 for fileTuple in files:
     doMatch(fileTuple)
