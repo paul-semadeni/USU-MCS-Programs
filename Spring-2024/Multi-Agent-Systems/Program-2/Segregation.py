@@ -23,12 +23,14 @@ class Schelling:
         # self.similarity_threshold = similarity_threshold
         self.similarity_threshold = dict()
         self.n_iterations = n_iterations
-
+        # TODO: Add a feature where the similarity_threshold can be different for each of the colors
         for c in range(colors):
             self.similarity_threshold[c + 1] = similarity_threshold[c]
 
     def populate(self):
+        self.choices = {0: "empty_house", 1: "swap_house"}
         self.empty_houses = []
+        self.willing_to_swap = []
         self.agents = {}
         print("Populate ",  self.width ,  self.height)
         self.all_houses = list(itertools.product(range(self.width), range(self.height)))
@@ -103,34 +105,73 @@ class Schelling:
 
     def move_locations(self):
         total_distance=0
+        self.prev_temp_dict = dict()
         temp_dict = dict()
+        keep_iterating = True
         for i in range(self.n_iterations):
             self.old_agents = copy.deepcopy(self.agents)
             n_changes = 0
+            total = 0
+            satisfied = 0
+
             for agent in self.old_agents:
                 agent_color = self.agents[agent]
                 is_unsatisfied = self.is_unsatisfied(agent[0], agent[1])
                 if is_unsatisfied:
-                    empty_house = random.choice(self.empty_houses)
-                    self.agents[empty_house] = agent_color
-                    del self.agents[agent]
-                    self.empty_houses.remove(empty_house)
-                    self.empty_houses.append(agent)
-                    total_distance += abs(empty_house[0] - agent[0])+ abs(empty_house[1] - agent[1])
+                    choice = "empty_house"
+                    if len(self.willing_to_swap) > 2:
+                        choice = random.choice(self.choices)
+                    # TODO: Add a feature where agents can improve on their current location by performing a location swap with another agent who is willing to swap
+                    if choice == "swap_house":
+                        swapping_house_with = random.choice(self.willing_to_swap)
+                        swapping_agent_color = self.agents[swapping_house_with]
+                        if swapping_agent_color != agent_color:
+                            self.agents[swapping_house_with] = agent_color
+                            self.agents[agent] = swapping_agent_color
+                            total_distance += abs(swapping_house_with[0] - agent[0]) + abs(swapping_house_with[1] - agent[1])
+                            if not self.is_unsatisfied(swapping_house_with[0], swapping_house_with[1]):
+                                self.willing_to_swap.remove(swapping_house_with)
+                        else:
+                            choice = "empty_house"
+
+                    if choice == "empty_house":
+                        empty_house = random.choice(self.empty_houses)
+                        self.agents[empty_house] = agent_color
+                        del self.agents[agent]
+                        self.empty_houses.remove(empty_house)
+                        self.empty_houses.append(agent)
+                        total_distance += abs(empty_house[0] - agent[0]) + abs(empty_house[1] - agent[1])
+                        if self.is_unsatisfied(empty_house[0], empty_house[1]):
+                            self.willing_to_swap.append(empty_house)
+
                     n_changes += 1
                 # TODO: Add output to indicate the percentage of each agent type that meets the desired similarity_threshold
                 if agent_color not in temp_dict:
                     temp_dict[agent_color] = { "met_threshold": 0, "total": 0 }
                 temp_dict[agent_color]["total"] += 1
+                total += 1
                 if not is_unsatisfied:
                     temp_dict[agent_color]["met_threshold"] += 1
-
-            if i%30==0:
-                print('Iteration: %d , Color 1 Similarity Ratio: %3.2f, Color 2 Similarity Ratio: %3.2f. Number of changes: %d total distance: %d' %(i+1,self.similarity_threshold[1],self.similarity_threshold[2],n_changes,total_distance))
-
-                for color in temp_dict:
-                    print(f"\t{ str(round((temp_dict[color]['met_threshold']/temp_dict[color]['total']) * 100, 1)) }% of color { color } met the similarity threshold.")
-            if n_changes == 0:
+                    satisfied += 1
+            self.willing_to_swap.clear()
+            # TODO: Add a feature to stop when little progress is being made.  Print out a message to indicate how many iterations  you did.
+            if len(self.prev_temp_dict) > 0:
+                for color in self.prev_temp_dict:
+                    current_percentage = temp_dict[color]['met_threshold']/temp_dict[color]['total']
+                    prev_percentage = self.prev_temp_dict[color]['met_threshold']/self.prev_temp_dict[color]['total']
+                    if current_percentage - prev_percentage < 0.005:
+                        keep_iterating = False
+                        break
+            if keep_iterating:
+                if i%30==0:
+                    print('Iteration: %d. Number of changes: %d total distance: %d' %(i+1,n_changes,total_distance))
+                    for color in temp_dict:
+                        print(f"\tColor {color} Similarity Ratio: {self.similarity_threshold[color]}, { str(round((temp_dict[color]['met_threshold']/temp_dict[color]['total']) * 100, 1)) }% met the similarity threshold.")
+                        self.prev_temp_dict[color] = {"met_threshold": temp_dict[color]['met_threshold'], "total": temp_dict[color]['total']}
+                if n_changes == 0:
+                    break
+            else:
+                print("\t\tToo few changes. Number of iterations: " + str(i+1))
                 break
 
     # def move_to_empty(self, x, y):
@@ -213,17 +254,17 @@ class Schelling:
 
 def main():
     ##Starter Simulation
-    schelling_0 = Schelling(5, 5, 0.3, [0.3, 0.5], 200, 2)
+    schelling_0 = Schelling(5, 5, 0.3, [0.75, 0.5, .7], 200, 3)
     schelling_0.populate()
 
     ##First Simulation
-    schelling_1 = Schelling(50, 50, 0.3, [0.3, 0.8], 200, 2)
+    schelling_1 = Schelling(50, 50, 0.3, [0.5, 0.8, 0.25], 200, 3)
     schelling_1.populate()
 
-    schelling_2 = Schelling(50, 50, 0.3, [0.3, 0.5], 200, 2)
+    schelling_2 = Schelling(50, 50, 0.3, [0.35, 0.5, 0.6], 200, 3)
     schelling_2.populate()
 
-    schelling_3 = Schelling(50, 50, 0.3, [0.5, 0.8], 200, 2)
+    schelling_3 = Schelling(50, 50, 0.3, [0.25, 0.55, 0.45], 200, 3)
     schelling_3.populate()
 
     schelling_1.plot('Schelling Model with 2 colors: Initial State', 'files/schelling_2_initial.png')
