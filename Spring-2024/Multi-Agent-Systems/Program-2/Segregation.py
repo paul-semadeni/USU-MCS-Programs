@@ -14,7 +14,7 @@ import copy
 
 
 class Schelling:
-    def __init__(self, width, height, empty_ratio, similarity_threshold, n_iterations, colors=2):
+    def __init__(self, width, height, empty_ratio, similarity_threshold, n_iterations, neighborhood, colors=2):
         self.agents = None
         self.width = width
         self.height = height
@@ -23,6 +23,7 @@ class Schelling:
         # self.similarity_threshold = similarity_threshold
         self.similarity_threshold = dict()
         self.n_iterations = n_iterations
+        self.neighborhood = neighborhood
         # TODO: Add a feature where the similarity_threshold can be different for each of the colors
         for c in range(colors):
             self.similarity_threshold[c + 1] = similarity_threshold[c]
@@ -119,30 +120,49 @@ class Schelling:
                 is_unsatisfied = self.is_unsatisfied(agent[0], agent[1])
                 if is_unsatisfied:
                     choice = "empty_house"
+                    house_outside_neighborhood = True
                     if len(self.willing_to_swap) > 2:
                         choice = random.choice(self.choices)
                     # TODO: Add a feature where agents can improve on their current location by performing a location swap with another agent who is willing to swap
                     if choice == "swap_house":
-                        swapping_house_with = random.choice(self.willing_to_swap)
-                        swapping_agent_color = self.agents[swapping_house_with]
-                        if swapping_agent_color != agent_color:
-                            self.agents[swapping_house_with] = agent_color
-                            self.agents[agent] = swapping_agent_color
-                            total_distance += abs(swapping_house_with[0] - agent[0]) + abs(swapping_house_with[1] - agent[1])
-                            if not self.is_unsatisfied(swapping_house_with[0], swapping_house_with[1]):
-                                self.willing_to_swap.remove(swapping_house_with)
-                        else:
-                            choice = "empty_house"
+                        # TODO: e.	Add a feature where you prefer to move to locations in the neighborhood.  The idea is that a move may be cheaper if the agent didn’t move as far.
+                        i = 0
+                        while house_outside_neighborhood and i < 20:
+                            swapping_house_with = random.choice(self.willing_to_swap)
+                            house_swap_location = abs(swapping_house_with[0] - agent[0]) + abs(swapping_house_with[1] - agent[1])
+                            if house_swap_location <= self.neighborhood:
+                                house_outside_neighborhood = False
+                                swapping_agent_color = self.agents[swapping_house_with]
+                                if swapping_agent_color != agent_color:
+                                    self.agents[swapping_house_with] = agent_color
+                                    self.agents[agent] = swapping_agent_color
+                                    total_distance += abs(swapping_house_with[0] - agent[0]) + abs(swapping_house_with[1] - agent[1])
+                                    if not self.is_unsatisfied(swapping_house_with[0], swapping_house_with[1]):
+                                        self.willing_to_swap.remove(swapping_house_with)
+                                else:
+                                    choice = "empty_house"
+                            else:
+                                house_outside_neighborhood = True
+
+                            if i == 20:
+                                choice = "empty_house"
+                            i += 1
 
                     if choice == "empty_house":
-                        empty_house = random.choice(self.empty_houses)
-                        self.agents[empty_house] = agent_color
-                        del self.agents[agent]
-                        self.empty_houses.remove(empty_house)
-                        self.empty_houses.append(agent)
-                        total_distance += abs(empty_house[0] - agent[0]) + abs(empty_house[1] - agent[1])
-                        if self.is_unsatisfied(empty_house[0], empty_house[1]):
-                            self.willing_to_swap.append(empty_house)
+                        while house_outside_neighborhood:
+                            empty_house = random.choice(self.empty_houses)
+                            empty_house_location = abs(empty_house[0] - agent[0]) + abs(empty_house[1] - agent[1])
+                            if empty_house_location <= self.neighborhood:
+                                house_outside_neighborhood = False
+                                self.agents[empty_house] = agent_color
+                                del self.agents[agent]
+                                self.empty_houses.remove(empty_house)
+                                self.empty_houses.append(agent)
+                                total_distance += abs(empty_house[0] - agent[0]) + abs(empty_house[1] - agent[1])
+                                if self.is_unsatisfied(empty_house[0], empty_house[1]):
+                                    self.willing_to_swap.append(empty_house)
+                            else:
+                                house_outside_neighborhood = True
 
                     n_changes += 1
                 # TODO: Add output to indicate the percentage of each agent type that meets the desired similarity_threshold
@@ -159,7 +179,7 @@ class Schelling:
                 for color in self.prev_temp_dict:
                     current_percentage = temp_dict[color]['met_threshold']/temp_dict[color]['total']
                     prev_percentage = self.prev_temp_dict[color]['met_threshold']/self.prev_temp_dict[color]['total']
-                    if current_percentage - prev_percentage < 0.005:
+                    if current_percentage - prev_percentage < 0.0005:
                         keep_iterating = False
                         break
             if keep_iterating:
@@ -254,17 +274,17 @@ class Schelling:
 
 def main():
     ##Starter Simulation
-    schelling_0 = Schelling(5, 5, 0.3, [0.75, 0.5, .7], 200, 3)
+    schelling_0 = Schelling(5, 5, 0.3, [0.75, 0.5, .7], 200, 10, 3)
     schelling_0.populate()
 
     ##First Simulation
-    schelling_1 = Schelling(50, 50, 0.3, [0.5, 0.8, 0.25], 200, 3)
+    schelling_1 = Schelling(50, 50, 0.3, [0.5, 0.8, 0.25], 200, 500, 3)
     schelling_1.populate()
 
-    schelling_2 = Schelling(50, 50, 0.3, [0.35, 0.5, 0.6], 200, 3)
+    schelling_2 = Schelling(50, 50, 0.3, [0.35, 0.5, 0.6], 200, 100, 3)
     schelling_2.populate()
 
-    schelling_3 = Schelling(50, 50, 0.3, [0.25, 0.55, 0.45], 200, 3)
+    schelling_3 = Schelling(50, 50, 0.3, [0.25, 0.55, 0.45], 200, 300, 3)
     schelling_3.populate()
 
     schelling_1.plot('Schelling Model with 2 colors: Initial State', 'files/schelling_2_initial.png')
