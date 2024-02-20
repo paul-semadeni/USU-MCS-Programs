@@ -1,7 +1,7 @@
 -- CREATE DATABASE intro_to_data_analysis
 
 -- SHOW DATABASES;
-
+--TODO: Create a table named Wiki Edit, which contains the following schema
 USE intro_to_data_analysis;
 CREATE TABLE wiki_edit(
 	revision_id 		INT 				AUTO_INCREMENT
