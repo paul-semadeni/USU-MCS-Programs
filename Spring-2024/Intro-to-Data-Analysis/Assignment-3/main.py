@@ -166,19 +166,7 @@ for x in col.find(query, {"follower_or_followee": 1, "number_of_tweets": 1}):
 print("Your followees average # of tweets: ", round(count / total, 0))
 
 # TODO: BONUS Extract the number of your followers and followees per year using the creation time field, e.g.
-# y = col.aggregate([
-#     {
-#         "$group" : {
-#         "_id" : { "$dateToString": { format: "%Y-%m-%d", "date": "$date" } },
-#         "totalSaleAmount": { "$sum": { "$multiply": [ "$price", "$quantity" ] } },
-#         " averageQuantity": { "$avg": "$quantity" },
-#         "count": { "$sum": 1 }
-#         }
-#     },
-#     # Third Stage
-#     {
-#         "$sort" : { "totalSaleAmount": -1 }
-#     }
-# ])
-# for x in y:
-#     print(x)
+# pipeline = [
+#     {"$group": {"_id": {"$year": "created_at"}}},
+# ]
+# print(list(col.aggregate(pipeline)))
