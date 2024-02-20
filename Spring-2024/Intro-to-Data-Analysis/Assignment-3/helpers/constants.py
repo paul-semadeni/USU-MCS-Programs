@@ -1,4 +1,4 @@
 USERNAME = "root"
-PASSWORD = "P@ul&M@ddie19"
+PASSWORD = ""
 HOST_NAME = "localhost"
-DATABASE_NAME = "intro_to_data_analysis"
+DATABASE_NAME = ""
