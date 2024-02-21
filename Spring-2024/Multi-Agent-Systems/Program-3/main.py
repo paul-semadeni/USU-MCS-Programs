@@ -15,11 +15,23 @@ class Matrix:
     def get_shape(self):
         return self.shape
 
+    def set_shape(self, shape):
+        self.shape = shape
+        return
+
     def get_rows(self):
         return self.rows
 
+    def set_rows(self, rows):
+        self.rows = rows
+        return
+
     def get_columns(self):
         return self.columns
+
+    def set_columns(self, columns):
+        self.columns = columns
+        return
 
     def create_matrix(self):
         pairs = list()
@@ -43,14 +55,16 @@ def strongly_dominated(matrix):
     m = matrix.create_matrix()
     strongly_dominated = False
     while not strongly_dominated:
-        new_m = column_compare(m, matrix.get_columns(), int(matrix.get_shape()[1]))
+        new_m = column_compare(m, matrix)
 
 
     return
 
-def column_compare(m, columns, shape):
+def column_compare(m, matrix):
+    columns = matrix.get_columns()
+    shape = int(matrix.get_shape()[1])
     temp_list = list()
-
+    # Create column list
     s = 0
     for i in columns:
         n = s % shape
@@ -59,10 +73,24 @@ def column_compare(m, columns, shape):
         else:
             temp_list[n] += [int(i)]
         s += 1
-
-    bo = temp_list[3] > temp_list[2]
-    print(bo)
-    return
+    # Keep track of largest column value
+    largest_val = temp_list[0]
+    position = 0
+    remove_position = 0
+    p = 0
+    for i in temp_list:
+        if i > largest_val:
+            largest_val = i
+            position = p
+        remove_position = p
+        p += 1
+    # Remove item from position
+    if position != remove_position:
+        for row in m:
+            row.pop(remove_position)
+        matrix.set_shape([len(m), len(m[0])])
+        # TODO: Update the rows and columns in the matrix object (the shape is being updated)
+    return m
 
 def row_compare(self):
     return
