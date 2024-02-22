@@ -54,46 +54,97 @@ class Matrix:
 def strongly_dominated(matrix):
     m = matrix.create_matrix()
     strongly_dominated = False
-    while not strongly_dominated:
-        new_m = column_compare(m, matrix)
-
-
-    return
+    i = 0
+    while not strongly_dominated and i < 10:
+        if int(matrix.get_shape()[1]) > 1:
+            m = column_compare(m, matrix)
+        if int(matrix.get_shape()[0]) > 1:
+            m = row_compare(m, matrix)
+        if len(m) == 1 and len(m[0]) == 1:
+            strongly_dominated = True
+        i += 1
+    print("Strongly dominated strategy: ", m)
+    return m
 
 def column_compare(m, matrix):
     columns = matrix.get_columns()
+    # Function can handle rows and columns
     shape = int(matrix.get_shape()[1])
     temp_list = list()
     # Create column list
     s = 0
     for i in columns:
         n = s % shape
-        if len(temp_list) <= shape - 1:
+        if len(temp_list) < shape:
             temp_list.append([int(i)])
         else:
             temp_list[n] += [int(i)]
         s += 1
+    m = update_matrix(m, matrix, temp_list, shape, "column")
+    return m
+
+def row_compare(m, matrix):
+    rows = matrix.get_rows()
+    # Function can handle rows and columns
+    shape = int(matrix.get_shape()[0])
+    num_cols = int(matrix.get_shape()[1])
+    temp_list = list()
+    # Create column list
+    s = 0
+    n = 0
+    for i in rows:
+        # c = s % num_cols
+        if s == 0:
+            temp_list.append([int(i)])
+        elif s == num_cols:
+            temp_list.append([int(i)])
+            n += 1
+        else:
+            temp_list[n] += [int(i)]
+        s += 1
+    m = update_matrix(m, matrix, temp_list, shape, "row")
+    return m
+
+def update_matrix(m, matrix, temp_list, shape, what):
+    columns = matrix.get_columns()
+    rows = matrix.get_rows()
     # Keep track of largest column value
     largest_val = temp_list[0]
     position = 0
-    remove_position = 0
+    remove_position = list()
     p = 0
     for i in temp_list:
-        if i > largest_val:
+        bigger_val = list()
+        for j in range(len(i)):
+            if i[j] >= largest_val[j]:
+                bigger_val.append(True)
+            elif i[j] <= largest_val[j]:
+                bigger_val.append(False)
+        if False in bigger_val:
+            remove_position.append(p)
+        else:
             largest_val = i
             position = p
-        remove_position = p
         p += 1
+    remove_position.append(position)
     # Remove item from position
-    if position != remove_position:
-        for row in m:
-            row.pop(remove_position)
+    if position != remove_position[0]:
+        if what == "column":
+            for row in m:
+                row.pop(remove_position[0])
+        else:
+            m.pop(remove_position[0])
+        # Update the rows and columns in the matrix object (the shape is being updated)
+        for i in range(len(columns)):
+            if remove_position[0] == (i - 1) % shape:
+                columns.pop(i - 1)
+                rows.pop(i - 1)
+        matrix.set_columns(columns)
+        matrix.set_rows(rows)
         matrix.set_shape([len(m), len(m[0])])
-        # TODO: Update the rows and columns in the matrix object (the shape is being updated)
+    # else:
+    #     print("Cannot remove last position")
     return m
-
-def row_compare(self):
-    return
 
 def read_file(filename):
     shape = list()
