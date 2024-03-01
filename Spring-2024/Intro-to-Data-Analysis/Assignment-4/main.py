@@ -7,7 +7,10 @@
 """
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from math import log, e
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import PCA
 
 # TODO: Apply equal width discretization to produce 5 bins to the "Close" column. Display the first 5 discretized values by using the head() function.
 print("\nEqual Width Discretization".upper())
@@ -120,3 +123,58 @@ for col in vehicles_df:
         print(f"{col_name} mean absolute deviation: ", mad)
 print("\nCorrelation Matrix".upper())
 print(vehicles_df.drop(columns=["class"]).corr())
+
+# TODO: Apply PCA to vehicles dataset. You can use PCA from sklearn or calculate PCs from eigenvectors of the covariance matrix as described in the lecture.
+def generate_pc(columns):
+    scaler = MinMaxScaler()
+    data_rescaled = scaler.fit_transform(columns.to_numpy())
+
+    pca = PCA().fit(data_rescaled)
+    plt.rcParams["figure.figsize"] = (12,6)
+
+    fig, ax = plt.subplots()
+    xi = np.arange(1, 19, step=1)
+    y = np.cumsum(pca.explained_variance_ratio_)
+
+    plt.ylim(0.0,1.1)
+    plt.plot(xi, y, marker="o", linestyle="--", color="b")
+
+    plt.xlabel("Number of Components")
+    plt.xticks(np.arange(0, 19, step=1))
+    plt.ylabel("Cumulative variance (%)")
+    plt.title("The number of components needed to explain variance")
+
+    plt.axhline(y=0.99, color="r", linestyle="-")
+    plt.text(0.5, 0.85, "99% cut-off threshold", color="red", fontsize=16)
+
+    ax.grid(axis="x")
+    plt.show()
+    return
+
+def generate_pc_2(columns):
+    num_components = 2
+    cov = columns.cov().to_numpy()
+    A = columns.to_numpy()
+    [eigvals, pcs] = np.linalg.eig(cov)
+    sorted_index = np.argsort(eigvals)[::-1]
+    eigvals = eigvals[sorted_index]
+    pcs = pcs[:,sorted_index]
+    M = (A-np.mean(A.T, axis = 1)).T
+    projected = np.dot(pcs.T, M).T
+    projected = pd.DataFrame(projected[:,:num_components], columns=["pc1", "pc2"])
+    projected.plot(kind="scatter", x="pc1", y="pc2")
+    plt.show()
+
+    # fig, axes = plt.subplots(2, 1, sharex=True)
+    # attribute = list(columns)
+    # pcdata = pd.Series(pcs[:,1], index=attribute)
+    # pcdata.plot(kind="barh", ax=axes[1], color="k", alpha=0.7)
+    # axes[0].set_title(r"1st PC", size="x-large")
+    # pcdata = pd.Series(pcs[:,1], index=attribute)
+    # pcdata.plot(kind="barh", ax=axes[1], color="k", alpha=0.7)
+    # axes[0].set_title(r"2nd PC", size="x-large")
+    return
+
+print("\nPrincipal Component Analysis (PCA)".upper())
+generate_pc(vehicles_df.drop(columns=["class"]))
+generate_pc_2(vehicles_df.drop(columns=["class"]))
