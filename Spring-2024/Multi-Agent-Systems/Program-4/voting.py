@@ -49,8 +49,10 @@ def create_voting(voters, candidates):
         for v in range(candidates):
             candidate = s[v][CAND] - 1  # which candidate has rank v+1
             candidateRanking[i][candidate][PLACE] = v + 1
+    preferred = [i[0] for i in ordered]
     print_rankings(names, candidateRanking, voters, candidates, ordered)
-    ranked_choice_voting(voters, ordered)
+    winner = ranked_choice_voting(voters, ordered)
+    social_welfare(winner, names, candidateRanking, voters, preferred)
 
 
 # TODO: Using Ranked Choice voting (described above), list the order in which candidates are eliminated. Output the winner using ranked choice voting
@@ -75,12 +77,32 @@ def ranked_choice_voting(voters, ordered):
         winner_pct = results[winner] / voters
         eliminated_order.append(biggest_loser)
     print("\nRANKED CHOICE VOTING", "\nWinner:", winner, "\nOrder candidates were eliminated:", eliminated_order)
-    return
+    return winner
 
 # TODO: Output the social welfare for the system given the winner using both cardinal and ordinal utility
-def social_welfare():
-    
-    print("\nSOCIAL WELFARE", "\nCardinal utility:", "\nOrdinal utility:")
+def social_welfare(winner, names, ranking, voters, preferred):
+    print("\nSOCIAL WELFARE")
+    system_cardinal = 0
+    system_ordinal = 0
+    for i in range(voters):
+        # Calculate cardinal utility
+        voter = names[i]
+        candidate_ranking = ranking[i]
+        prefer = preferred[i]
+        for j in candidate_ranking:
+            if j[0] == winner:
+                winner_cardinal = j[1]
+                winner_ordinal = j[2]
+            elif j[0] == prefer:
+                prefer_cardinal = j[1]
+                prefer_ordinal = j[2]
+        cardinal = round(abs(prefer_cardinal - winner_cardinal), 1)
+        ordinal = abs(prefer_ordinal - winner_ordinal)
+
+        system_cardinal += cardinal
+        system_ordinal += ordinal
+        print(voter, "Cardinal utility:", cardinal, "Ordinal utility:", ordinal)
+    print("\nSystem cardinal utility:", round(system_cardinal, 1), "System ordinal utility:", system_ordinal)
     return
 
 # Press the green button in the gutter to run the script.
