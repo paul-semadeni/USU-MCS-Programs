@@ -28,6 +28,7 @@ def print_rankings(names, r, voters, candidates, ordered):
 def create_voting(voters, candidates):
     names = ["Alice ", "Bart  ", "Cindy ", "Darin ", "Elmer ", "Finn  ", "Greg  ", "Hank  ", "Ian   ", "Jim   ",
              "Kate  ", "Linc  ", "Mary  ", "Nancy ", "Owen  ", "Peter ", "Quinn ", "Ross  ", "Sandy ", "Tom   ",
+             "Ursula", "Van   ", "Wendy ", "Xavier", "Yan   ", "Zach  ", "Alice ", "Bart  ", "Cindy ", "Darin ", "Elmer ", "Finn  ", "Greg  ", "Hank  ", "Ian   ", "Jim   ", "Kate  ", "Linc  ", "Mary  ", "Nancy ", "Owen  ", "Peter ", "Quinn ", "Ross  ", "Sandy ", "Tom   ",
              "Ursula", "Van   ", "Wendy ", "Xavier", "Yan   ", "Zach  "]
 
     connections = [[0 for i in range(voters)] for j in range(voters)]
@@ -57,6 +58,8 @@ def create_voting(voters, candidates):
     ranked_choice_voting(names, candidateRanking, connections, deepcopy(ordered), preferred, voters, part_two = False)
     # Part 2
     ranked_choice_voting(names, candidateRanking, connections, deepcopy(ordered), preferred, voters, part_two = True)
+    # Borda
+    borda_count(names, deepcopy(ordered), voters, candidateRanking, preferred)
 
 
 # TODO: Using Ranked Choice voting (described above), list the order in which candidates are eliminated. Output the winner using ranked choice voting
@@ -99,6 +102,10 @@ def social_welfare(winner, names, ranking, voters, preferred, part):
         voter = names[i]
         candidate_ranking = ranking[i]
         prefer = preferred[i]
+        winner_cardinal = 0
+        winner_ordinal = 0
+        prefer_cardinal = 0
+        prefer_ordinal = 0
         for j in candidate_ranking:
             if j[0] == winner:
                 winner_cardinal = j[1]
@@ -132,29 +139,30 @@ def social_network(names, ranking, connections, ordered, preferred, voters):
         top_3 = v["candidate_order"][:3]
         num_friends = len(v["friends"])
         friend_preferences = dict()
-        for i in v["friends"]:
-            c = i["candidate"]
-            if c not in friend_preferences:
-                friend_preferences[c] = 1
-            else:
-                friend_preferences[c] += 1
-        most_pref = max(friend_preferences, key=friend_preferences.get)
-        majority_pct = friend_preferences[most_pref]/num_friends
-        if majority_pct == 0.50 and len(friend_preferences) == 2 and most_pref in top_3:
-            keys = list(friend_preferences)
-            if keys[0] in top_3 and keys[1] in top_3:
-                position1 = top_3.index(keys[0])
-                position2 = top_3.index(keys[1])
-                # The majority of friends want the voter's top candidate
-                if position1 != 0 and position2 != 0:
-                    change_preference = min(position1, position2)
-                    print("change mind0")
-        elif majority_pct >= 0.50 and most_pref in top_3:
-            changed_mind.append(names[k])
-            # Change preference and order
-            ordered[k].remove(most_pref)
-            ordered[k].insert(0, most_pref)
-            preferred[k] = most_pref
+        if len(v["friends"]) > 0:
+            for i in v["friends"]:
+                c = i["candidate"]
+                if c not in friend_preferences:
+                    friend_preferences[c] = 1
+                else:
+                    friend_preferences[c] += 1
+            most_pref = max(friend_preferences, key=friend_preferences.get)
+            majority_pct = friend_preferences[most_pref]/num_friends
+            if majority_pct == 0.50 and len(friend_preferences) == 2 and most_pref in top_3:
+                keys = list(friend_preferences)
+                if keys[0] in top_3 and keys[1] in top_3:
+                    position1 = top_3.index(keys[0])
+                    position2 = top_3.index(keys[1])
+                    # The majority of friends want the voter's top candidate
+                    if position1 != 0 and position2 != 0:
+                        change_preference = min(position1, position2)
+                        print("change mind0")
+            elif majority_pct >= 0.50 and most_pref in top_3:
+                changed_mind.append(names[k])
+                # Change preference and order
+                ordered[k].remove(most_pref)
+                ordered[k].insert(0, most_pref)
+                preferred[k] = most_pref
     print("Changed their minds", changed_mind)
     return ordered
 
@@ -169,9 +177,34 @@ def map_voters_to_friends(connections, ordered, preferred, voters):
                 social_info[i]["friends"].append({"friend": j, "candidate": preferred[j]})
     return social_info
 
+# TODO: Compare the solution obtained by Borda with these two methods (ranked-choice and social networks)
+def borda_count(names, ordered, voters, ranking, preferred):
+    borda_cnt = dict()
+    for i in range(voters):
+        order = ordered[i]
+        points = len(order) - 1
+        for j in order:
+            if j not in borda_cnt:
+                borda_cnt[j] = points
+            else:
+                borda_cnt[j] += points
+            points -= 1
+    print("\nBORDA COUNT")
+    print("-------------------")
+    print("Candidate | Votes")
+    print("-------------------")
+    for k in borda_cnt:
+        v = borda_cnt[k]
+        print(' ' * abs(7 - len(str(k))), k, " | ", ' ' * abs(3 - len(str(v))), v)
+    print("-------------------")
+    winner = max(borda_cnt, key=borda_cnt.get)
+    print("\nWinner:", winner)
+    social_welfare(winner, names, ranking, voters, preferred, "Borda Count")
+    return
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    create_voting(20, 5)
+    create_voting(30, 3)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 
